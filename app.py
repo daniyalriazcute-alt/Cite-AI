@@ -1,3 +1,35 @@
+# === GROQ FIX - MUST BE FIRST ===
+import litellm
+litellm.drop_params = True
+_orig_compl = litellm.completion
+_orig_acompl = litellm.acompletion
+
+def _clean(msgs):
+    if isinstance(msgs, list):
+        for m in msgs:
+            if isinstance(m, dict):
+                m.pop("cache_breakpoint", None)
+                m.pop("cache_control", None)
+    return msgs
+
+def _patched(*a, **k):
+    if "messages" in k: k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
+    return _orig_compl(*a, **k)
+
+async def _patched_a(*a, **k):
+    if "messages" in k: k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
+    return await _orig_acompl(*a, **k)
+
+litellm.completion = _patched
+litellm.acompletion = _patched_a
+# === END GROQ FIX ===
+
 import streamlit as st
 from guardrails import firewall
 from agents import citation_agent, create_citation_task
@@ -12,8 +44,6 @@ st.markdown("""
 header,footer,#MainMenu{visibility:hidden}
 .stApp{background:#07070c!important;font-family:Inter,sans-serif}
 [data-testid="stSidebar"]{background:#0f0f18!important;border-right:1px solid #1e1e2e}
-
-/* FINAL ORANGE FIX - This makes Start New Chat orange like king.PNG */
 div[data-testid="stSidebar"] button[kind="primary"]{
   background: linear-gradient(90deg,#FF4D1F 0%,#FF8C1F 100%)!important;
   color:white!important; border:none!important; border-radius:12px!important;
@@ -25,14 +55,8 @@ div[data-testid="stSidebar"] button[kind="secondary"]{
   background:#171725!important; color:#9ca3af!important;
   border:1px solid #2a2a3a!important; border-radius:12px!important; height:40px!important;
 }
-div[data-baseweb="select"] > div{
-  background:#1e1e2e!important; border:1px solid #2a2a3a!important;
-  border-radius:12px!important; color:white!important;
-}
-div[data-testid="stChatInput"]{
-  background:#1c1c2b!important; border:1px solid #2e2e44!important;
-  border-radius:28px!important; box-shadow:0 0 0 4px rgba(139,92,246,0.08)!important;
-}
+div[data-baseweb="select"] > div{background:#1e1e2e!important;border:1px solid #2a2a3a!important;border-radius:12px!important;color:white!important}
+div[data-testid="stChatInput"]{background:#1c1c2b!important;border:1px solid #2e2e44!important;border-radius:28px!important;box-shadow:0 0 0 4px rgba(139,92,246,0.08)!important}
 .blink-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;box-shadow:0 0 12px #22c55e;animation:blink 1.2s infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
 .card{background:rgba(24,24,40,0.9);border:1px solid #252542;border-radius:16px;padding:12px;margin-bottom:12px}
@@ -49,7 +73,6 @@ def calc_t(): return 0 if not st.session_state.chat else sum(len(m["content"]) f
 def start_new(): st.session_state.chat=[]; st.session_state.history=[]; firewall.last_threat=None
 def end_chat(): st.session_state.chat=[]
 
-# ===== SIDEBAR =====
 with st.sidebar:
     st.markdown("""
     <div style='display:flex;align-items:center;gap:8px'>
@@ -61,7 +84,6 @@ with st.sidebar:
     st.write("")
     st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_orange_final")
     st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final")
-
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""
@@ -73,13 +95,11 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     else:
         for h in st.session_state.history[-5:][::-1]: st.caption(f"• {h[:35]}...")
-
     t=calc_t()
     st.markdown(f"""
     <div class='card' style='margin-top:16px'>
       <div style='font-size:9px;color:#5a5a6e;display:flex;justify-content:space-between'><span>⚡ TOKENS USED</span><span style='background:#16a34a22;color:#22c55e;padding:2px 6px;border-radius:6px'>HEALTHY</span></div>
       <div style='font-size:20px;font-weight:800;color:white;margin-top:6px'>{t} / 8192</div>
-      <div style='display:flex;justify-content:space-between;font-size:9px;color:#3a3a4a;margin-top:6px'><span>0% used</span><span>8192 max</span></div>
       <div style='height:3px;background:#1e1e2e;border-radius:3px;margin-top:6px'><div style='width:{min(t/8192*100,100)}%;height:100%;background:white;border-radius:3px'></div></div>
     </div>
     <div style='background:#141422;border:1px solid #1e1e2e;border-radius:12px;padding:10px;margin-top:10px'>
@@ -87,7 +107,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ===== MAIN + RIGHT =====
 col_main, col_right = st.columns([3,1])
 
 with col_main:
@@ -126,12 +145,12 @@ with col_main:
         with st.chat_message("assistant"):
             with st.spinner("Goal → Decide → Act → Observe → Complete..."):
                 task = create_citation_task(prompt, st.session_state.selected_style, st.session_state.selected_lang)
-                crew = Crew(agents=[citation_agent], tasks=[task], verbose=False)
+                crew = Crew(agents=[citation_agent], tasks=[task], verbose=False, cache=False)
                 try: res = crew.kickoff()
-                except Exception:
+                except Exception as e:
                     time.sleep(1)
                     try: res = crew.kickoff()
-                    except Exception as e: res = f"⚠️ Error: {e}"
+                    except Exception as e2: res = f"⚠️ Error: {e2}"
                 st.markdown(res)
                 st.session_state.chat.append({"role":"assistant","content":str(res)})
                 st.rerun()
