@@ -1,8 +1,9 @@
 streamlit==1.40.2
-crewai==0.95.0
-crewai-tools==0.40.0
-groq==0.13.0
+crewai==1.15.22
+crewai-tools==1.15.22
+groq==0.30.0
 langchain-groq==0.2.4
 python-dotenv==1.0.1
 requests==2.32.3
 pydantic==2.11.3
+httpx==0.28.1
