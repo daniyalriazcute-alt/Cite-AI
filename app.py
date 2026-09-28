@@ -148,11 +148,11 @@ with col_main:
         greetings = ["hi","hello","hey","salam","assalamu alaikum","hola","bonjour","yo","hi there","hello there","salaam"]
 
         if low_prompt in greetings or (len(low_prompt) < 10 and any(g in low_prompt for g in ["hi","hey","hello","salam"])):
-            greeting_res = """👋 **Hello! I'm CiteGuard AI**
+        greeting_res = """👋 **Hello! I'm CiteGuard AI**
 
 I'm your Secure Citation Generator, protected by Free AI Firewall and OWASP LLM Top 10 Guardrails.
 
-I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and 【entity-Harvard¦canonical_name=Harvard】 — in English, Español, or বাংলা.
+I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE and Harvard — in English, Español, or বাংলা.
 
 How can I help you cite today? Just paste your paper title, DOI, or URL.
 """
