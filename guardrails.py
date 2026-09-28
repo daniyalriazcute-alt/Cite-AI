@@ -4,42 +4,39 @@ class Firewall:
     def __init__(self):
         self.blocked_count = 127
         self.last_threat = None
-        self.history = []
+        self.status = {
+            "Prompt Injection": "Active",
+            "System Prompt Leakage": "Active",
+            "Improper Output Handling": "Filtered ✓"
+        }
 
     def scan(self, text: str):
-        text_lower = text.lower()
+        low = text.lower()
 
-        # OWASP LLM01: Prompt Injection
-        injection_patterns = [
-            "ignore previous", "ignore all previous", "disregard previous",
-            "reveal system prompt", "show system instructions", "bypass",
-            "jailbreak", "dan mode", "developer mode"
-        ]
-        for pat in injection_patterns:
-            if pat in text_lower:
+        # 1. Prompt Injection
+        for pat in ["ignore previous", "reveal system prompt", "reveal your system", "bypass", "jailbreak", "dan mode", "disregard previous", "you are now", "ignore all previous"]:
+            if pat in low:
                 self.blocked_count += 1
                 self.last_threat = "Prompt Injection"
-                self.history.append(pat)
-                return False, "Prompt Injection", "🛡️ **Firewall blocked: Prompt Injection** — I cannot share system instructions. Please provide a paper title, DOI, URL, or abstract to generate a citation."
+                self.status["Prompt Injection"] = "Blocked ✓"
+                return False, "Prompt Injection", "🛡️ **Firewall blocked: Prompt Injection** — Provide paper title, DOI, URL, or abstract."
 
-        # OWASP LLM06: System Prompt Leakage
-        leakage_patterns = ["system prompt", "system instructions", "your instructions", "what is your prompt"]
-        for pat in leakage_patterns:
-            if pat in text_lower:
+        # 2. SYSTEM PROMPT LEAKAGE
+        for pat in ["what is your system prompt", "show system prompt", "what is your prompt", "system instructions", "your instructions", "reveal prompt", "show me your system", "what is your system instructions"]:
+            if pat in low:
                 self.blocked_count += 1
                 self.last_threat = "System Prompt Leakage"
-                self.history.append(pat)
-                return False, "System Prompt Leakage", "🛡️ **Firewall blocked: System Prompt Leakage** — System instructions are protected and cannot be disclosed."
+                self.status["System Prompt Leakage"] = "Leaked ⚠️ → Blocked ✓"
+                return False, "System Prompt Leakage", "🛡️ **Firewall blocked: System Prompt Leakage** — System prompt is protected. Provide paper title instead."
 
-        # OWASP LLM02: Improper Output Handling
-        if "<script>" in text_lower or "javascript:" in text_lower or "onerror=" in text_lower:
+        # 3. XSS / Output Handling
+        if "<script>" in low or "onerror=" in low or "javascript:" in low or "<img" in low:
             self.blocked_count += 1
             self.last_threat = "Improper Output Handling"
-            self.history.append("xss")
             clean = re.sub(r'<[^>]+>', '', text)
-            return False, "Improper Output Handling", f"🛡️ **Output sanitized** — unsafe HTML removed. Clean input: {clean}"
+            self.status["Improper Output Handling"] = "Filtered ✓"
+            return False, "Improper Output Handling", f"🛡️ **Output sanitized**: {clean}"
 
-        # Safe
         return True, None, text
 
 firewall = Firewall()
