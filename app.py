@@ -11,14 +11,20 @@ def _clean(msgs):
                 m.pop("cache_control", None)
     return msgs
 def _pc(*a, **k):
-    if "messages" in k: k["messages"] = _clean(k["messages"])
-    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    if "messages" in k:
+        k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list):
+        a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
     return _orig_c(*a, **k)
 async def _pac(*a, **k):
-    if "messages" in k: k["messages"] = _clean(k["messages"])
-    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    if "messages" in k:
+        k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list):
+        a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
     return await _orig_ac(*a, **k)
 litellm.completion = _pc
 litellm.acompletion = _pac
@@ -67,25 +73,30 @@ div[data-testid="stChatInput"]{background:#1c1c2b!important;border:1px solid #2e
 </style>
 """, unsafe_allow_html=True)
 
-if "history" not in st.session_state: st.session_state.history=[]
-if "chat" not in st.session_state: st.session_state.chat=[]
-if "llm_tokens" not in st.session_state: st.session_state.llm_tokens=0
-if "selected_lang" not in st.session_state: st.session_state.selected_lang="English"
-if "selected_style" not in st.session_state: st.session_state.selected_style="APA 7"
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "chat" not in st.session_state:
+    st.session_state.chat = []
+if "llm_tokens" not in st.session_state:
+    st.session_state.llm_tokens = 0
+if "selected_lang" not in st.session_state:
+    st.session_state.selected_lang = "English"
+if "selected_style" not in st.session_state:
+    st.session_state.selected_style = "APA 7"
 
 def calc_t():
     return st.session_state.llm_tokens
 
 def start_new():
-    st.session_state.chat=[]
-    st.session_state.history=[]
-    st.session_state.llm_tokens=0
-    firewall.last_threat=None
-    firewall.status["Prompt Injection"]="Active"
-    firewall.status["System Prompt Leakage"]="Active"
+    st.session_state.chat = []
+    st.session_state.history = []
+    st.session_state.llm_tokens = 0
+    firewall.last_threat = None
+    firewall.status["Prompt Injection"] = "Active"
+    firewall.status["System Prompt Leakage"] = "Active"
 
 def end_chat():
-    st.session_state.chat=[]
+    st.session_state.chat = []
 
 with st.sidebar:
     st.markdown("""
@@ -96,14 +107,15 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v7")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v7")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v8")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v8")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
     else:
-        for h in st.session_state.history[-5:][::-1]: st.caption(f"• {h[:35]}...")
-    t=calc_t()
+        for h in st.session_state.history[-5:][::-1]:
+            st.caption(f"• {h[:35]}...")
+    t = calc_t()
     st.markdown(f"""
     <div class='card' style='margin-top:16px'>
       <div style='font-size:9px;color:#5a5a6e;display:flex;justify-content:space-between'><span>⚡ TOKENS USED</span><span style='background:#16a34a22;color:#22c55e;padding:2px 6px;border-radius:6px'>HEALTHY</span></div>
@@ -113,7 +125,7 @@ with st.sidebar:
     <div style='background:#141422;border:1px solid #1e1e2e;border-radius:12px;padding:10px;margin-top:10px'><div style='font-size:9px;color:#5a5a6e'>FIREWALL BLOCKED</div><div style='font-size:13px;font-weight:700;color:white'>{firewall.blocked_count} threats</div></div>
     """, unsafe_allow_html=True)
 
-col_main, col_right = st.columns([3,1])
+col_main, col_right = st.columns([3, 1])
 
 with col_main:
     st.markdown("""
@@ -128,47 +140,50 @@ with col_main:
     </div>
     """, unsafe_allow_html=True)
 
-    c1,c2 = st.columns(2)
+    c1, c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v7")
-        if "English" in lang_choice: st.session_state.selected_lang = "English"
-        elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
-        else: st.session_state.selected_lang = "বাংলা"
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English", "🇪🇸 Español", "🇧🇩 বাংলা"], index=0, key="lang_v8")
+        if "English" in lang_choice:
+            st.session_state.selected_lang = "English"
+        elif "Español" in lang_choice:
+            st.session_state.selected_lang = "Español"
+        else:
+            st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","【entity-Harvard¦canonical_name=Harvard】"], index=0, key="style_v7")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7", "MLA 9", "Chicago", "IEEE", "【entity-Harvard¦canonical_name=Harvard】"], index=0, key="style_v8")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
-        avatar = "🛡️" if m["role"]=="assistant" else "👤"
+        avatar = "🛡️" if m["role"] == "assistant" else "👤"
         with st.chat_message(m["role"], avatar=avatar):
             st.markdown(m["content"])
 
     if prompt := st.chat_input("Enter paper title, DOI, URL, or raw text..."):
         low_prompt = prompt.lower().strip()
-        greetings = ["hi","hello","hey","salam","assalamu alaikum","hola","bonjour","yo","hi there","hello there","salaam"]
+        greetings = ["hi", "hello", "hey", "salam", "assalamu alaikum", "hola", "bonjour", "yo", "hi there", "hello there", "salaam"]
 
-        if low_prompt in greetings or (len(low_prompt) < 10 and any(g in low_prompt for g in ["hi","hey","hello","salam"])):
- greeting_res = """👋 **Hello! I'm CiteGuard AI**
+        if low_prompt in greetings or (len(low_prompt) < 10 and any(g in low_prompt for g in ["hi", "hey", "hello", "salam"])):
+            greeting_res = """👋 **Hello! I'm CiteGuard AI**
 
 I'm your Secure Citation Generator, protected by Free AI Firewall and OWASP LLM Top 10 Guardrails.
 
-I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE and Harvard — in English, Español, or বাংলা.
+I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and 【entity-Harvard¦canonical_name=Harvard】 — in English, Español, or বাংলা.
 
 How can I help you cite today? Just paste your paper title, DOI, or URL.
 """
-            st.session_state.chat.append({"role":"user","content":prompt})
-            st.session_state.chat.append({"role":"assistant","content":greeting_res})
+            st.session_state.chat.append({"role": "user", "content": prompt})
+            st.session_state.chat.append({"role": "assistant", "content": greeting_res})
             st.session_state.history.append(prompt)
             st.rerun()
 
         ok, threat, clean = firewall.scan(prompt)
         if not ok:
-            st.session_state.chat.append({"role":"user","content":prompt})
-            st.session_state.chat.append({"role":"assistant","content":clean})
+            st.session_state.chat.append({"role": "user", "content": prompt})
+            st.session_state.chat.append({"role": "assistant", "content": clean})
             st.session_state.history.append(prompt)
             st.rerun()
 
-        st.session_state.chat.append({"role":"user","content":prompt})
+        st.session_state.chat.append({"role": "user", "content": prompt})
         st.session_state.history.append(prompt)
         with st.chat_message("assistant", avatar="🛡️"):
             with st.spinner("Goal → Decide → Act → Observe → Complete..."):
@@ -177,25 +192,25 @@ How can I help you cite today? Just paste your paper title, DOI, or URL.
                 try:
                     res = crew.kickoff()
                     res = strip_fake_doi(res)
-                    st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
+                    st.session_state.llm_tokens += len(str(res)) // 4 + len(prompt) // 4
                 except Exception as e:
                     time.sleep(1)
                     try:
                         res = crew.kickoff()
                         res = strip_fake_doi(res)
-                        st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
+                        st.session_state.llm_tokens += len(str(res)) // 4 + len(prompt) // 4
                     except Exception as e2:
                         res = f"⚠️ Error: {e2}"
                 st.markdown(res)
-                st.session_state.chat.append({"role":"assistant","content":str(res)})
+                st.session_state.chat.append({"role": "assistant", "content": str(res)})
                 st.rerun()
 
 with col_right:
-    inj_status = firewall.status.get("Prompt Injection","Active")
-    leak_status = firewall.status.get("System Prompt Leakage","Active")
+    inj_status = firewall.status.get("Prompt Injection", "Active")
+    leak_status = firewall.status.get("System Prompt Leakage", "Active")
     inj_color = "#22c55e" if "Active" in inj_status or "Blocked" in inj_status else "#eab308"
     leak_color = "#22c55e" if "Active" in leak_status else "#f97316" if "Leaked" in leak_status else "#22c55e"
-    t=calc_t()
+    t = calc_t()
     st.markdown(f"""
     <div class='card'><div style='display:flex;justify-content:space-between;font-size:11px'><b>🧩 Agent Workflow</b><span style='background:#1e1e2e;padding:2px 6px;border-radius:6px;font-size:9px'>CrewAI</span></div>
       <div style='display:flex;justify-content:space-between;text-align:center;margin-top:12px'>
