@@ -12,13 +12,16 @@ st.markdown("""
 header,footer,#MainMenu{visibility:hidden}
 .stApp{background:#07070c!important;font-family:Inter,sans-serif}
 [data-testid="stSidebar"]{background:#0f0f18!important;border-right:1px solid #1e1e2e}
-div[data-testid="stSidebar"] div[data-testid="stButton"]:first-of-type button{
+
+/* FINAL ORANGE FIX - This makes Start New Chat orange like king.PNG */
+div[data-testid="stSidebar"] button[kind="primary"]{
   background: linear-gradient(90deg,#FF4D1F 0%,#FF8C1F 100%)!important;
   color:white!important; border:none!important; border-radius:12px!important;
   font-weight:800!important; height:44px!important;
-  box-shadow:0 4px 24px rgba(255,77,31,0.45)!important;
+  box-shadow:0 4px 24px rgba(255,77,31,0.5)!important;
 }
-div[data-testid="stSidebar"] div[data-testid="stButton"]:nth-of-type(2) button{
+div[data-testid="stSidebar"] button[kind="primary"] p{color:white!important;font-weight:800!important}
+div[data-testid="stSidebar"] button[kind="secondary"]{
   background:#171725!important; color:#9ca3af!important;
   border:1px solid #2a2a3a!important; border-radius:12px!important; height:40px!important;
 }
@@ -46,6 +49,7 @@ def calc_t(): return 0 if not st.session_state.chat else sum(len(m["content"]) f
 def start_new(): st.session_state.chat=[]; st.session_state.history=[]; firewall.last_threat=None
 def end_chat(): st.session_state.chat=[]
 
+# ===== SIDEBAR =====
 with st.sidebar:
     st.markdown("""
     <div style='display:flex;align-items:center;gap:8px'>
@@ -55,16 +59,21 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, on_click=start_new, key="btn_start")
-    st.button("End Chat", use_container_width=True, on_click=end_chat, key="btn_end")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_orange_final")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final")
+
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'>
-      <div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div>
-      <div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div>
-      <div style='color:#3a3a4a;font-size:10px;margin-top:4px'>Your citations will appear<br>here after generation</div>
-    </div>
-    """, unsafe_allow_html=True)
+    if not st.session_state.history:
+        st.markdown("""
+        <div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'>
+          <div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div>
+          <div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div>
+          <div style='color:#3a3a4a;font-size:10px;margin-top:4px'>Your citations will appear<br>here after generation</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        for h in st.session_state.history[-5:][::-1]: st.caption(f"• {h[:35]}...")
+
     t=calc_t()
     st.markdown(f"""
     <div class='card' style='margin-top:16px'>
@@ -78,6 +87,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+# ===== MAIN + RIGHT =====
 col_main, col_right = st.columns([3,1])
 
 with col_main:
@@ -95,13 +105,12 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_widget")
-        # FIX: don't overwrite widget key, store in different session key
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_widget_final")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_widget")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_widget_final")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
