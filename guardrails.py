@@ -2,13 +2,12 @@ import re
 
 class Firewall:
     def __init__(self):
-        self.blocked_count = 127
+        self.blocked_count = 0
         self.last_threat = None
         self.status = {
-  "Prompt Injection": "Active",
-  "System Prompt Leakage": "Active",
-  "Improper Output Handling": "Active"  # <-- Should be Active on start
-}
+            "Prompt Injection": "Active",
+            "System Prompt Leakage": "Active",
+            "Improper Output Handling": "Active"
         }
 
     def scan(self, text: str):
@@ -30,8 +29,8 @@ class Firewall:
                 self.status["System Prompt Leakage"] = "Leaked ⚠️ → Blocked ✓"
                 return False, "System Prompt Leakage", "🛡️ **Firewall blocked: System Prompt Leakage** — System prompt is protected. Provide paper title instead."
 
-        # 3. XSS / Output Handling
-        if "<script>" in low or "onerror=" in low or "javascript:" in low or "<img" in low:
+        # 3. XSS / Improper Output Handling - INPUT FILTER
+        if "<script" in low or "onerror=" in low or "javascript:" in low or "<img" in low or "<iframe" in low:
             self.blocked_count += 1
             self.last_threat = "Improper Output Handling"
             clean = re.sub(r'<[^>]+>', '', text)
@@ -39,5 +38,16 @@ class Firewall:
             return False, "Improper Output Handling", f"🛡️ **Output sanitized**: {clean}"
 
         return True, None, text
+
+    def filter_output(self, text: str):
+        original = text
+        text = re.sub(r'<script.*?>.*?</script>', '', text, flags=re.IGNORECASE|re.DOTALL)
+        text = re.sub(r'<iframe.*?>.*?</iframe>', '', text, flags=re.IGNORECASE|re.DOTALL)
+        text = re.sub(r'javascript:', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'<img[^>]*onerror[^>]*>', '', text, flags=re.IGNORECASE)
+        
+        if text != original:
+            self.status["Improper Output Handling"] = "Filtered ✓"
+        return text
 
 firewall = Firewall()
