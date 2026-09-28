@@ -1,38 +1,45 @@
 import re
-from typing import Tuple
 
-# OWASP LLM01, LLM06, LLM02 focused
-INJECTION_PATTERNS = [
-    r"ignore.*previous.*instructions",
-    r"system.*prompt",
-    r"reveal.*prompt",
-    r"jailbreak",
-    r"dan\s*mode",
-    r"print.*system",
-    r"<\s*system\s*>",
-    r"forget.*you.*are",
-]
-
-class FreeAIFirewall:
+class Firewall:
     def __init__(self):
         self.blocked_count = 127
-        self.compiled = [re.compile(p, re.I) for p in INJECTION_PATTERNS]
+        self.last_threat = None
+        self.history = []
 
-    def scan(self, user_input: str) -> Tuple[bool, str, str]:
-        """Returns (is_safe, threat_type, sanitized_output)"""
-        for pat in self.compiled:
-            if pat.search(user_input):
+    def scan(self, text: str):
+        text_lower = text.lower()
+
+        # OWASP LLM01: Prompt Injection
+        injection_patterns = [
+            "ignore previous", "ignore all previous", "disregard previous",
+            "reveal system prompt", "show system instructions", "bypass",
+            "jailbreak", "dan mode", "developer mode"
+        ]
+        for pat in injection_patterns:
+            if pat in text_lower:
                 self.blocked_count += 1
-                return False, "PROMPT_INJECTION", "🛡️ Blocked by Free AI Firewall: Prompt Injection detected."
+                self.last_threat = "Prompt Injection"
+                self.history.append(pat)
+                return False, "Prompt Injection", "🛡️ **Firewall blocked: Prompt Injection** — I cannot share system instructions. Please provide a paper title, DOI, URL, or abstract to generate a citation."
 
-        # System prompt leakage prevention
-        if "system prompt" in user_input.lower() or "hidden instruction" in user_input.lower():
-            return False, "SYSTEM_PROMPT_LEAKAGE", "🛡️ Blocked: Attempt to leak system prompt."
+        # OWASP LLM06: System Prompt Leakage
+        leakage_patterns = ["system prompt", "system instructions", "your instructions", "what is your prompt"]
+        for pat in leakage_patterns:
+            if pat in text_lower:
+                self.blocked_count += 1
+                self.last_threat = "System Prompt Leakage"
+                self.history.append(pat)
+                return False, "System Prompt Leakage", "🛡️ **Firewall blocked: System Prompt Leakage** — System instructions are protected and cannot be disclosed."
 
-        # Improper output handling - strip potential XSS/HTML
-        sanitized = re.sub(r"<script.*?>.*?</script>", "", user_input, flags=re.I)
-        sanitized = sanitized.replace("<", "&lt;").replace(">", "&gt;") if len(sanitized)!= len(user_input) else user_input
+        # OWASP LLM02: Improper Output Handling
+        if "<script>" in text_lower or "javascript:" in text_lower or "onerror=" in text_lower:
+            self.blocked_count += 1
+            self.last_threat = "Improper Output Handling"
+            self.history.append("xss")
+            clean = re.sub(r'<[^>]+>', '', text)
+            return False, "Improper Output Handling", f"🛡️ **Output sanitized** — unsafe HTML removed. Clean input: {clean}"
 
-        return True, "SAFE", sanitized
+        # Safe
+        return True, None, text
 
-firewall = FreeAIFirewall()
+firewall = Firewall()
