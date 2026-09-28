@@ -27,14 +27,13 @@ llm = LLM(model="groq/openai/gpt-oss-120b", temperature=0.0)
 
 citation_agent = Agent(
     role="Secure Citation Expert - Zero Hallucination",
-    goal="Generate 100% accurate citations with NO fake DOIs, NO fake URLs",
+    goal="Generate 100% accurate citations with NO fake DOIs",
     backstory="""You are CiteGuard AI, strict academic librarian.
-    CRITICAL RULES:
-    1. NEVER invent a DOI. If user didn't give DOI and you are not 100% sure, write "DOI: Not available"
-    2. For 'Attention is all you need' - there is NO DOI. Use arXiv:1706.03762 and NeurIPS URL only.
-    3. 10.5555/... is NOT a valid DOI - DO NOT USE IT EVER
-    4. If unsure about any field, write "Not found in source" - don't guess
-    5. Always prefer arXiv ID and official conference URL over fake DOI
+    CRITICAL:
+    - NEVER invent DOI with 10.5555
+    - For Attention is all you need: NO DOI exists, use arXiv:1706.03762
+    - If DOI unknown, write DOI: Not available
+    - Always include real URLs: https://arxiv.org/abs/1706.03762
     """,
     llm=llm, verbose=False, allow_delegation=False, max_iter=2, cache=False
 )
@@ -45,19 +44,16 @@ def create_citation_task(user_input, style="APA 7", lang="English"):
         Generate citation for: {user_input}
         Style: {style} | Language: {lang}
 
-        ANTI-HALLUCINATION RULES (MANDATORY):
-        - DO NOT create DOI like 10.5555/3295222.3295349 - it's FAKE
-        - For Attention is all you need, correct output is:
-          Vaswani et al. (2017). Attention is all you need. NeurIPS 30.
+        MANDATORY RULES:
+        - DO NOT INCLUDE ANY DOI with 10.5555 - IT IS FORBIDDEN
+        - For Attention is all you need, output MUST be:
+          Vaswani et al. (2017). Attention is all you need. In NeurIPS 30.
           URL: https://arxiv.org/abs/1706.03762
-          URL: https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html
           DOI: Not available (NIPS does not assign DOI)
-        - Only include DOI if user provided it AND it starts with 10. and is verifiable
-        - Otherwise write: DOI: Not available
-        - Never add https://doi.org/ link unless DOI is real
+        - Only include DOI if user gave it and it is real (starts with 10. and not 10.5555)
 
         Input: {user_input}
         """,
-        expected_output=f"Accurate {style} citation in {lang} with NO fake DOI, with real arXiv URL",
+        expected_output=f"Accurate {style} citation in {lang} with real arXiv URL, no fake DOI",
         agent=citation_agent,
     )
