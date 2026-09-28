@@ -69,17 +69,23 @@ div[data-testid="stChatInput"]{background:#1c1c2b!important;border:1px solid #2e
 
 if "history" not in st.session_state: st.session_state.history=[]
 if "chat" not in st.session_state: st.session_state.chat=[]
+if "llm_tokens" not in st.session_state: st.session_state.llm_tokens=0
 if "selected_lang" not in st.session_state: st.session_state.selected_lang="English"
 if "selected_style" not in st.session_state: st.session_state.selected_style="APA 7"
 
-def calc_t(): return 0 if not st.session_state.chat else sum(len(m["content"]) for m in st.session_state.chat)//4
+def calc_t():
+    return st.session_state.llm_tokens
+
 def start_new():
     st.session_state.chat=[]
     st.session_state.history=[]
+    st.session_state.llm_tokens=0
     firewall.last_threat=None
     firewall.status["Prompt Injection"]="Active"
     firewall.status["System Prompt Leakage"]="Active"
-def end_chat(): st.session_state.chat=[]
+
+def end_chat():
+    st.session_state.chat=[]
 
 with st.sidebar:
     st.markdown("""
@@ -90,8 +96,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v6")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v6")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v7")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v7")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
@@ -124,12 +130,12 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v6")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v7")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_v6")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","【entity-Harvard¦canonical_name=Harvard】"], index=0, key="style_v7")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
@@ -146,7 +152,7 @@ with col_main:
 
 I'm your Secure Citation Generator, protected by Free AI Firewall and OWASP LLM Top 10 Guardrails.
 
-I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and Harvard — in English, Español, or বাংলা.
+I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and 【entity-Harvard¦canonical_name=Harvard】 — in English, Español, or বাংলা.
 
 How can I help you cite today? Just paste your paper title, DOI, or URL.
 """
@@ -171,11 +177,13 @@ How can I help you cite today? Just paste your paper title, DOI, or URL.
                 try:
                     res = crew.kickoff()
                     res = strip_fake_doi(res)
+                    st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
                 except Exception as e:
                     time.sleep(1)
                     try:
                         res = crew.kickoff()
                         res = strip_fake_doi(res)
+                        st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
                     except Exception as e2:
                         res = f"⚠️ Error: {e2}"
                 st.markdown(res)
