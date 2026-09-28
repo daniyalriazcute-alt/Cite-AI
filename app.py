@@ -90,8 +90,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_final_v5")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final_v5")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v6")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v6")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
@@ -124,15 +124,14 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_final_v5")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v6")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","【entity-Harvard¦canonical_name=Harvard】"], index=0, key="style_final_v5")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_v6")
         st.session_state.selected_style = style_choice
 
-    # Chat history with avatar
     for m in st.session_state.chat:
         avatar = "🛡️" if m["role"]=="assistant" else "👤"
         with st.chat_message(m["role"], avatar=avatar):
@@ -142,23 +141,20 @@ with col_main:
         low_prompt = prompt.lower().strip()
         greetings = ["hi","hello","hey","salam","assalamu alaikum","hola","bonjour","yo","hi there","hello there","salaam"]
 
-        # 1. GREETING HANDLER - CLEAN (no Try me block)
         if low_prompt in greetings or (len(low_prompt) < 10 and any(g in low_prompt for g in ["hi","hey","hello","salam"])):
-            greeting_res = """
-👋 **Hello! I'm CiteGuard AI**
+            greeting_res = """👋 **Hello! I'm CiteGuard AI**
 
 I'm your Secure Citation Generator, protected by Free AI Firewall and OWASP LLM Top 10 Guardrails.
 
-I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and 【entity-Harvard¦canonical_name=Harvard】 — in English, Español, or বাংলা.
+I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and Harvard — in English, Español, or বাংলা.
 
 How can I help you cite today? Just paste your paper title, DOI, or URL.
-            """
+"""
             st.session_state.chat.append({"role":"user","content":prompt})
             st.session_state.chat.append({"role":"assistant","content":greeting_res})
             st.session_state.history.append(prompt)
             st.rerun()
 
-        # 2. Firewall scan
         ok, threat, clean = firewall.scan(prompt)
         if not ok:
             st.session_state.chat.append({"role":"user","content":prompt})
@@ -166,7 +162,6 @@ How can I help you cite today? Just paste your paper title, DOI, or URL.
             st.session_state.history.append(prompt)
             st.rerun()
 
-        # 3. Normal citation flow
         st.session_state.chat.append({"role":"user","content":prompt})
         st.session_state.history.append(prompt)
         with st.chat_message("assistant", avatar="🛡️"):
