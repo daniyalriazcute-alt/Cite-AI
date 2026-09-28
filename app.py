@@ -80,8 +80,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 header,footer,#MainMenu{visibility:hidden}
 .stApp{background:#07070c!important;font-family:Inter,sans-serif}
-[data-testid="stSidebar"]{background:#0f0f18!important;border-right:1px solid #1e1e2e; visibility:visible!important; transform:none!important;}
-/* ONLY the collapsed button - NOT the whole sidebar */
+[data-testid="stSidebar"]{background:#0f0f18!important;border-right:1px solid #1e1e2e; visibility:visible!important;}
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"]{
   display:flex!important; visibility:visible!important; opacity:1!important;
@@ -93,7 +92,6 @@ header,footer,#MainMenu{visibility:hidden}
 }
 [data-testid="stSidebarCollapsedControl"] svg,
 [data-testid="collapsedControl"] svg{fill:white!important; stroke:white!important; width:28px!important; height:28px!important;}
-
 div[data-testid="stSidebar"] button[kind="primary"]{
   background: linear-gradient(90deg,#FF4D1F 0%,#FF8C1F 100%)!important;
   color:white!important; border:none!important; border-radius:12px!important;
@@ -121,18 +119,23 @@ if "selected_lang" not in st.session_state: st.session_state.selected_lang="Engl
 if "selected_style" not in st.session_state: st.session_state.selected_style="APA 7"
 
 def calc_t(): return st.session_state.llm_tokens
+
 def start_new():
-    st.session_state.chat=[]; st.session_state.history=[]; st.session_state.llm_tokens=0
+    st.session_state.chat=[]
+    st.session_state.history=[]
+    st.session_state.llm_tokens=0
     firewall.last_threat=None
     firewall.status["Prompt Injection"]="Active"
     firewall.status["System Prompt Leakage"]="Active"
+    firewall.status["Improper Output Handling"]="Active"
+
 def end_chat(): st.session_state.chat=[]
 
 with st.sidebar:
     st.markdown("""<div style='display:flex;align-items:center;gap:8px'><div style='width:28px;height:28px;background:#3b82f6;border-radius:8px;display:flex;align-items:center;justify-content:center'>🛡️</div><b style='color:white;line-height:1.1'>CiteGuard AI<br><span style='font-size:9px;color:#6b7280;font-weight:400'>SECURE • v2.1.0</span></b><span style='margin-left:auto'><span class='blink-dot'></span></span></div>""", unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v13")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v13")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v14")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v14")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
@@ -142,16 +145,17 @@ with st.sidebar:
     st.markdown(f"""<div class='card' style='margin-top:16px'><div style='font-size:9px;color:#5a5a6e;display:flex;justify-content:space-between'><span>⚡ TOKENS USED</span><span style='background:#16a34a22;color:#22c55e;padding:2px 6px;border-radius:6px'>HEALTHY</span></div><div style='font-size:20px;font-weight:800;color:white;margin-top:6px'>{t} / 8192</div><div style='height:3px;background:#1e1e2e;border-radius:3px;margin-top:6px'><div style='width:{min(t/8192*100,100)}%;height:100%;background:white;border-radius:3px'></div></div></div><div style='background:#141422;border:1px solid #1e1e2e;border-radius:12px;padding:10px;margin-top:10px'><div style='font-size:9px;color:#5a5a6e'>FIREWALL BLOCKED</div><div style='font-size:13px;font-weight:700;color:white'>{firewall.blocked_count} threats</div></div>""", unsafe_allow_html=True)
 
 col_main, col_right = st.columns([3,1])
+
 with col_main:
     st.markdown("""<div style='position:relative;text-align:center;padding-top:10px'><div class='glow'></div><h1 style='font-size:40px;font-weight:800;line-height:1.05;margin:0;position:relative'><span style='background:linear-gradient(90deg,#d8b4fe 0%,#a78bfa 50%,#93c5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent'>CiteGuard AI</span><br><span style='color:white'>Secure Citation Generator</span></h1><p style='color:#6b7280;font-size:11px;margin-top:10px'>CrewAI | Groq openai/gpt-oss-120B | Free AI Firewall | OWASP LLM Top 10 2025</p><div style='margin:10px auto;background:#1c1c2b;border:1px solid rgba(34,197,94,0.2);color:#22c55e;padding:3px 10px;border-radius:16px;width:fit-content;font-size:10px'><span class='blink-dot' style='width:6px;height:6px'></span> SYSTEM SECURE</div></div>""", unsafe_allow_html=True)
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v13")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v14")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE"," Harvard"], index=0, key="style_v13")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE"," Harvard"], index=0, key="style_v14")
         st.session_state.selected_style = style_choice
     for m in st.session_state.chat:
         avatar = "🛡️" if m["role"]=="assistant" else "👤"
@@ -180,12 +184,14 @@ with col_main:
                 crew = Crew(agents=[citation_agent], tasks=[task], verbose=False, cache=False)
                 try:
                     res = crew.kickoff()
+                    res = firewall.filter_output(str(res))
                     res = strip_fake_doi(res)
                     st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
                 except Exception as e:
                     time.sleep(1)
                     try:
                         res = crew.kickoff()
+                        res = firewall.filter_output(str(res))
                         res = strip_fake_doi(res)
                         st.session_state.llm_tokens += len(str(res))//4 + len(prompt)//4
                     except Exception as e2:
@@ -197,7 +203,9 @@ with col_main:
 with col_right:
     inj_status = firewall.status.get("Prompt Injection","Active")
     leak_status = firewall.status.get("System Prompt Leakage","Active")
+    out_status = firewall.status.get("Improper Output Handling","Active")
     inj_color = "#22c55e" if "Active" in inj_status or "Blocked" in inj_status else "#eab308"
     leak_color = "#22c55e" if "Active" in leak_status else "#f97316" if "Leaked" in leak_status else "#22c55e"
+    out_color = "#22c55e" if "Active" in out_status else "#f97316"
     t=calc_t()
-    st.markdown(f"""<div class='card'><div style='display:flex;justify-content:space-between;font-size:11px'><b>🧩 Agent Workflow</b><span style='background:#1e1e2e;padding:2px 6px;border-radius:6px;font-size:9px'>CrewAI</span></div><div style='display:flex;justify-content:space-between;text-align:center;margin-top:12px'><div><div style='width:30px;height:30px;background:#c4b5fd;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Goal</div></div><div><div style='width:30px;height:30px;background:#93c5fd;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Decide</div></div><div><div style='width:30px;height:30px;background:#6ee7b7;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Act</div></div><div><div style='width:30px;height:30px;background:#fdba74;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Observe</div></div></div><div style='background:#1e1e2e;border-radius:8px;padding:4px;text-align:center;margin-top:10px;font-size:10px;color:#60a5fa'>↻ Continue / Complete</div></div><div class='card'><div style='font-size:11px'><span class='blink-dot'></span> Short-Term Memory <span style='float:right;background:#22c55e22;color:#22c55e;padding:2px 6px;border-radius:6px;font-size:9px'>ACTIVE</span></div></div><div class='card' style='background:#1a1a0a'><span style='width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block'></span> Rate Limit: {t} / 8192 tokens</div><div class='card' style='background:#0f2318;border:1px solid #1a3a24;border-radius:16px;padding:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px'><span><span class='blink-dot'></span> Free AI Firewall</span><span style='background:#22c55e;color:black;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800'>PROTECTED</span></div><div class='card' style='margin-top:12px'><div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:{inj_color}'>{inj_status}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> System Prompt Leakage</span><span style='color:{leak_color}'>{leak_status}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:#22c55e'>Filtered ✓</span></div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class='card'><div style='display:flex;justify-content:space-between;font-size:11px'><b>🧩 Agent Workflow</b><span style='background:#1e1e2e;padding:2px 6px;border-radius:6px;font-size:9px'>CrewAI</span></div><div style='display:flex;justify-content:space-between;text-align:center;margin-top:12px'><div><div style='width:30px;height:30px;background:#c4b5fd;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Goal</div></div><div><div style='width:30px;height:30px;background:#93c5fd;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Decide</div></div><div><div style='width:30px;height:30px;background:#6ee7b7;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Act</div></div><div><div style='width:30px;height:30px;background:#fdba74;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Observe</div></div></div><div style='background:#1e1e2e;border-radius:8px;padding:4px;text-align:center;margin-top:10px;font-size:10px;color:#60a5fa'>↻ Continue / Complete</div></div><div class='card'><div style='font-size:11px'><span class='blink-dot'></span> Short-Term Memory <span style='float:right;background:#22c55e22;color:#22c55e;padding:2px 6px;border-radius:6px;font-size:9px'>ACTIVE</span></div></div><div class='card' style='background:#1a1a0a'><span style='width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block'></span> Rate Limit: {t} / 8192 tokens</div><div class='card' style='background:#0f2318;border:1px solid #1a3a24;border-radius:16px;padding:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px'><span><span class='blink-dot'></span> Free AI Firewall</span><span style='background:#22c55e;color:black;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800'>PROTECTED</span></div><div class='card' style='margin-top:12px'><div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:{inj_color}'>{inj_status}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> System Prompt Leakage</span><span style='color:{leak_color}'>{leak_status}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:{out_color}'>{out_status}</span></div></div>""", unsafe_allow_html=True)
