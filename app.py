@@ -1,4 +1,4 @@
-# === GROQ FIX - MUST BE FIRST LINE ===
+# === GROQ FIX - MUST BE FIRST ===
 import litellm
 litellm.drop_params = True
 _orig_c = litellm.completion
@@ -22,7 +22,7 @@ async def _pac(*a, **k):
     return await _orig_ac(*a, **k)
 litellm.completion = _pc
 litellm.acompletion = _pac
-# === END GROQ FIX ===
+# === END FIX ===
 
 import streamlit as st
 import re
@@ -33,7 +33,6 @@ from crewai import Crew
 
 st.set_page_config(page_title="CiteGuard AI", layout="wide", page_icon="🛡️")
 
-# --- FAKE DOI KILLER ---
 def strip_fake_doi(text: str):
     t = str(text)
     t = re.sub(r'https?://doi\.org/10\.5555[^\s\)\]]+', 'https://arxiv.org/abs/1706.03762', t, flags=re.IGNORECASE)
@@ -74,7 +73,7 @@ if "selected_lang" not in st.session_state: st.session_state.selected_lang="Engl
 if "selected_style" not in st.session_state: st.session_state.selected_style="APA 7"
 
 def calc_t(): return 0 if not st.session_state.chat else sum(len(m["content"]) for m in st.session_state.chat)//4
-def start_new(): st.session_state.chat=[]; st.session_state.history=[]; firewall.last_threat=None
+def start_new(): st.session_state.chat=[]; st.session_state.history=[]; firewall.last_threat=None; firewall.status["Prompt Injection"]="Active"; firewall.status["System Prompt Leakage"]="Active"
 def end_chat(): st.session_state.chat=[]
 
 with st.sidebar:
@@ -86,8 +85,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_final_orange")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final2")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_final_orange_v4")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final_v4")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
@@ -120,12 +119,12 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_final_v3")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_final_v4")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_final_v3")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_final_v4")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
@@ -157,9 +156,10 @@ with col_main:
                 st.rerun()
 
 with col_right:
-    last = getattr(firewall,'last_threat',None)
-    inj_text = "Blocked ✓" if last=="Prompt Injection" else "Active"
-    leak_text = "Leaked ⚠️" if last=="System Prompt Leakage" else "Filtered ✓"
+    inj_status = firewall.status.get("Prompt Injection","Active")
+    leak_status = firewall.status.get("System Prompt Leakage","Active")
+    inj_color = "#22c55e" if "Active" in inj_status or "Blocked" in inj_status else "#eab308"
+    leak_color = "#22c55e" if "Active" in leak_status else "#f97316" if "Leaked" in leak_status else "#22c55e"
     t=calc_t()
     st.markdown(f"""
     <div class='card'><div style='display:flex;justify-content:space-between;font-size:11px'><b>🧩 Agent Workflow</b><span style='background:#1e1e2e;padding:2px 6px;border-radius:6px;font-size:9px'>CrewAI</span></div>
@@ -174,5 +174,10 @@ with col_right:
     <div class='card'><div style='font-size:11px'><span class='blink-dot'></span> Short-Term Memory <span style='float:right;background:#22c55e22;color:#22c55e;padding:2px 6px;border-radius:6px;font-size:9px'>ACTIVE</span></div></div>
     <div class='card' style='background:#1a1a0a'><span style='width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block'></span> Rate Limit: {t} / 8192 tokens</div>
     <div class='card' style='background:#0f2318;border:1px solid #1a3a24;border-radius:16px;padding:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px'><span><span class='blink-dot'></span> Free AI Firewall</span><span style='background:#22c55e;color:black;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800'>PROTECTED</span></div>
-    <div class='card' style='margin-top:12px'><div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:#22c55e'>{inj_text}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:#22c55e'>Filtered ✓</span></div></div>
+    <div class='card' style='margin-top:12px'>
+      <div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div>
+      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:{inj_color}'>{inj_status}</span></div>
+      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> System Prompt Leakage</span><span style='color:{leak_color}'>{leak_status}</span></div>
+      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:#22c55e'>Filtered ✓</span></div>
+    </div>
     """, unsafe_allow_html=True)
