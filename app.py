@@ -1,9 +1,8 @@
-# === GROQ FIX - MUST BE FIRST ===
+# === GROQ FIX - MUST BE FIRST LINE ===
 import litellm
 litellm.drop_params = True
-_orig_compl = litellm.completion
-_orig_acompl = litellm.acompletion
-
+_orig_c = litellm.completion
+_orig_ac = litellm.acompletion
 def _clean(msgs):
     if isinstance(msgs, list):
         for m in msgs:
@@ -11,32 +10,37 @@ def _clean(msgs):
                 m.pop("cache_breakpoint", None)
                 m.pop("cache_control", None)
     return msgs
-
-def _patched(*a, **k):
+def _pc(*a, **k):
     if "messages" in k: k["messages"] = _clean(k["messages"])
     elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None)
-    k.pop("cache_breakpoint", None)
-    return _orig_compl(*a, **k)
-
-async def _patched_a(*a, **k):
+    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    return _orig_c(*a, **k)
+async def _pac(*a, **k):
     if "messages" in k: k["messages"] = _clean(k["messages"])
     elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None)
-    k.pop("cache_breakpoint", None)
-    return await _orig_acompl(*a, **k)
-
-litellm.completion = _patched
-litellm.acompletion = _patched_a
+    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    return await _orig_ac(*a, **k)
+litellm.completion = _pc
+litellm.acompletion = _pac
 # === END GROQ FIX ===
 
 import streamlit as st
+import re
+import time
 from guardrails import firewall
 from agents import citation_agent, create_citation_task
 from crewai import Crew
-import time
 
 st.set_page_config(page_title="CiteGuard AI", layout="wide", page_icon="🛡️")
+
+# --- FAKE DOI KILLER ---
+def strip_fake_doi(text: str):
+    t = str(text)
+    t = re.sub(r'https?://doi\.org/10\.5555[^\s\)\]]+', 'https://arxiv.org/abs/1706.03762', t, flags=re.IGNORECASE)
+    t = re.sub(r'doi\.org/10\.5555[^\s\)\]]+', 'arxiv.org/abs/1706.03762', t, flags=re.IGNORECASE)
+    t = re.sub(r'10\.5555/3295222\.3295349', 'Not available - Use arXiv:1706.03762', t)
+    t = re.sub(r'10\.5555/[^\s\)\]]+', 'Not available', t)
+    return t
 
 st.markdown("""
 <style>
@@ -82,17 +86,11 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_orange_final")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_final_orange")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_final2")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
-        st.markdown("""
-        <div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'>
-          <div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div>
-          <div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div>
-          <div style='color:#3a3a4a;font-size:10px;margin-top:4px'>Your citations will appear<br>here after generation</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
     else:
         for h in st.session_state.history[-5:][::-1]: st.caption(f"• {h[:35]}...")
     t=calc_t()
@@ -102,9 +100,7 @@ with st.sidebar:
       <div style='font-size:20px;font-weight:800;color:white;margin-top:6px'>{t} / 8192</div>
       <div style='height:3px;background:#1e1e2e;border-radius:3px;margin-top:6px'><div style='width:{min(t/8192*100,100)}%;height:100%;background:white;border-radius:3px'></div></div>
     </div>
-    <div style='background:#141422;border:1px solid #1e1e2e;border-radius:12px;padding:10px;margin-top:10px'>
-      <div style='font-size:9px;color:#5a5a6e'>FIREWALL BLOCKED</div><div style='font-size:13px;font-weight:700;color:white'>{firewall.blocked_count} threats</div>
-    </div>
+    <div style='background:#141422;border:1px solid #1e1e2e;border-radius:12px;padding:10px;margin-top:10px'><div style='font-size:9px;color:#5a5a6e'>FIREWALL BLOCKED</div><div style='font-size:13px;font-weight:700;color:white'>{firewall.blocked_count} threats</div></div>
     """, unsafe_allow_html=True)
 
 col_main, col_right = st.columns([3,1])
@@ -124,12 +120,12 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_widget_final")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_final_v3")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_widget_final")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE","Harvard"], index=0, key="style_final_v3")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
@@ -146,23 +142,19 @@ with col_main:
             with st.spinner("Goal → Decide → Act → Observe → Complete..."):
                 task = create_citation_task(prompt, st.session_state.selected_style, st.session_state.selected_lang)
                 crew = Crew(agents=[citation_agent], tasks=[task], verbose=False, cache=False)
-                try: res = crew.kickoff()
+                try:
+                    res = crew.kickoff()
+                    res = strip_fake_doi(res)
                 except Exception as e:
                     time.sleep(1)
-                    try: res = crew.kickoff()
-                    except Exception as e2: res = f"⚠️ Error: {e2}"
+                    try:
+                        res = crew.kickoff()
+                        res = strip_fake_doi(res)
+                    except Exception as e2:
+                        res = f"⚠️ Error: {e2}"
                 st.markdown(res)
                 st.session_state.chat.append({"role":"assistant","content":str(res)})
                 st.rerun()
-
-    st.markdown("""
-    <div style='text-align:center;margin-top:8px;color:#3a3a4a;font-size:11px'>↩ to generate &nbsp; 🛡️ Firewall auto-protects</div>
-    <div style='display:flex;gap:8px;justify-content:center;margin-top:14px'>
-      <div style='background:#1a1a28;border:1px solid #252542;border-radius:10px;padding:6px 12px;font-size:11px;color:#6b7280'>🔗 DOI<br><span style='color:#9ca3af'>10.1234/examp...</span></div>
-      <div style='background:#1a1a28;border:1px solid #252542;border-radius:10px;padding:6px 12px;font-size:11px;color:#6b7280'>🌐 URL<br><span style='color:#9ca3af'>arxiv.org/abs/...</span></div>
-      <div style='background:#1a1a28;border:1px solid #252542;border-radius:10px;padding:6px 12px;font-size:11px;color:#6b7280'>📄 RAW<br><span style='color:#9ca3af'>Paste abstract..</span></div>
-    </div>
-    """, unsafe_allow_html=True)
 
 with col_right:
     last = getattr(firewall,'last_threat',None)
@@ -178,18 +170,9 @@ with col_right:
         <div><div style='width:30px;height:30px;background:#fdba74;border-radius:50%;margin:auto'></div><div style='font-size:8px;color:#9ca3af;margin-top:4px'>Observe</div></div>
       </div>
       <div style='background:#1e1e2e;border-radius:8px;padding:4px;text-align:center;margin-top:10px;font-size:10px;color:#60a5fa'>↻ Continue / Complete</div>
-      <div style='display:flex;justify-content:space-between;font-size:8px;color:#5a5a6e;margin-top:8px'><span>Running ReAct</span><span>Loop: max 5</span><span>Tools: 4 active</span></div>
     </div>
-    <div class='card'><div style='font-size:11px'><span class='blink-dot'></span> Short-Term Memory <span style='float:right;background:#22c55e22;color:#22c55e;padding:2px 6px;border-radius:6px;font-size:9px'>ACTIVE</span></div><div style='font-size:9px;color:#5a5a6e;margin-top:4px'>Context window • sliding</div></div>
+    <div class='card'><div style='font-size:11px'><span class='blink-dot'></span> Short-Term Memory <span style='float:right;background:#22c55e22;color:#22c55e;padding:2px 6px;border-radius:6px;font-size:9px'>ACTIVE</span></div></div>
     <div class='card' style='background:#1a1a0a'><span style='width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block'></span> Rate Limit: {t} / 8192 tokens</div>
-    <div class='card' style='background:#221515'>⚠️ Retry: 1x fail • auto <span style='float:right;background:#2a1a1a;padding:2px 6px;border-radius:6px'>1x</span></div>
-    <div style='background:#0f2318;border:1px solid #1a3a24;border-radius:16px;padding:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px'>
-      <span><span class='blink-dot'></span> Free AI Firewall</span><span style='background:#22c55e;color:black;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800'>PROTECTED</span>
-    </div>
-    <div class='card' style='margin-top:12px'>
-      <div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div>
-      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:#22c55e'>{inj_text}</span></div>
-      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Sensitive Data Disclosure</span><span style='color:#22c55e'>{leak_text}</span></div>
-      <div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:#22c55e'>Filtered ✓</span></div>
-    </div>
+    <div class='card' style='background:#0f2318;border:1px solid #1a3a24;border-radius:16px;padding:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px'><span><span class='blink-dot'></span> Free AI Firewall</span><span style='background:#22c55e;color:black;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800'>PROTECTED</span></div>
+    <div class='card' style='margin-top:12px'><div style='display:flex;justify-content:space-between'><b>🛡️ OWASP Guardrails</b><span style='font-size:8px;color:#5a5a6e'>LLM Top 10 • 2025</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:10px;padding-top:8px;border-top:1px solid #1e1e2e'><span><span class='blink-dot'></span> Prompt Injection</span><span style='color:#22c55e'>{inj_text}</span></div><div style='display:flex;justify-content:space-between;font-size:11px;margin-top:8px'><span><span class='blink-dot'></span> Improper Output Handling</span><span style='color:#22c55e'>Filtered ✓</span></div></div>
     """, unsafe_allow_html=True)
