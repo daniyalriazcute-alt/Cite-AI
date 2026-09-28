@@ -1,9 +1,7 @@
-streamlit==1.40.2
+streamlit
 crewai==1.15.22
 crewai-tools==1.15.22
-groq==0.30.0
-langchain-groq==0.2.4
-python-dotenv==1.0.1
-requests==2.32.3
-pydantic==2.11.3
-httpx==0.28.1
+groq
+langchain-groq
+python-dotenv
+requests
