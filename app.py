@@ -11,14 +11,20 @@ def _clean(msgs):
                 m.pop("cache_control", None)
     return msgs
 def _pc(*a, **k):
-    if "messages" in k: k["messages"] = _clean(k["messages"])
-    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    if "messages" in k:
+        k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list):
+        a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
     return _orig_c(*a, **k)
 async def _pac(*a, **k):
-    if "messages" in k: k["messages"] = _clean(k["messages"])
-    elif a and isinstance(a[0], list): a = (_clean(a[0]),) + a[1:]
-    k.pop("cache_control", None); k.pop("cache_breakpoint", None)
+    if "messages" in k:
+        k["messages"] = _clean(k["messages"])
+    elif a and isinstance(a[0], list):
+        a = (_clean(a[0]),) + a[1:]
+    k.pop("cache_control", None)
+    k.pop("cache_breakpoint", None)
     return await _orig_ac(*a, **k)
 litellm.completion = _pc
 litellm.acompletion = _pac
@@ -48,49 +54,27 @@ header,footer,#MainMenu{visibility:hidden}
 .stApp{background:#07070c!important;font-family:Inter,sans-serif}
 [data-testid="stSidebar"]{background:#0f0f18!important;border-right:1px solid #1e1e2e}
 
-/* === HAMBURGER FIX - ALWAYS VISIBLE === */
+/* === HAMBURGER FIX - ORANGE ARROW ALWAYS VISIBLE WHEN COLLAPSED === */
 [data-testid="stSidebarCollapsedControl"]{
   display:flex!important;
   visibility:visible!important;
   opacity:1!important;
-  top:14px!important;
+  top:16px!important;
   left:0!important;
   background: linear-gradient(90deg,#FF4D1F 0%,#FF8C1F 100%)!important;
-  border-radius:0 12px 12px 0!important;
-  width:44px!important;
-  height:44px!important;
-  box-shadow:0 4px 24px rgba(255,77,31,0.6)!important;
-  z-index:999999!important;
+  border-radius:0 14px 14px 0!important;
+  width:48px!important;
+  height:48px!important;
+  box-shadow:0 6px 28px rgba(255,77,31,0.7)!important;
+  z-index:9999999!important;
   border:none!important;
 }
-[data-testid="stSidebarCollapsedControl"] button{
-  color:white!important;
-}
+[data-testid="stSidebarCollapsedControl"] button{color:white!important;}
 [data-testid="stSidebarCollapsedControl"] svg{
   fill:white!important;
   stroke:white!important;
-  width:22px!important;
-  height:22px!important;
-}
-[data-testid="stSidebar"] [data-testid="stSidebarNav"]{display:none}
-
-/* Custom hamburger in main header */
-.hamburger-btn{
-  position:fixed;
-  top:14px;
-  left:14px;
-  width:44px;
-  height:44px;
-  background:#1c1c2b;
-  border:1px solid #2e2e44;
-  border-radius:12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  font-size:20px;
-  cursor:pointer;
-  z-index:999998;
+  width:24px!important;
+  height:24px!important;
 }
 
 div[data-testid="stSidebar"] button[kind="primary"]{
@@ -111,16 +95,6 @@ div[data-testid="stChatInput"]{background:#1c1c2b!important;border:1px solid #2e
 .card{background:rgba(24,24,40,0.9);border:1px solid #252542;border-radius:16px;padding:12px;margin-bottom:12px}
 .glow{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(99,102,241,0.18) 0%,transparent 70%);pointer-events:none}
 </style>
-
-<script>
-// Hamburger toggle - always bring sidebar back
-function toggleSidebar(){
-  const collapsed = parent.document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
-  const expanded = parent.document.querySelector('[data-testid="stSidebar"] button[kind="secondary"]');
-  // If sidebar is collapsed, click to open
-  if(collapsed){ collapsed.click(); }
-}
-</script>
 """, unsafe_allow_html=True)
 
 if "history" not in st.session_state: st.session_state.history=[]
@@ -150,8 +124,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v9")
-    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v9")
+    st.button("+ Start New Chat", use_container_width=True, type="primary", on_click=start_new, key="btn_start_v10")
+    st.button("End Chat", use_container_width=True, type="secondary", on_click=end_chat, key="btn_end_v10")
     st.markdown(f"<div style='margin-top:16px;font-size:10px;color:#5a5a6e;letter-spacing:0.6px'>CHAT HISTORY &nbsp; {len(st.session_state.history)} chats</div>", unsafe_allow_html=True)
     if not st.session_state.history:
         st.markdown("""<div style='background:#141422;border:1px solid #1e1e2e;border-radius:16px;padding:28px 10px;text-align:center;margin-top:8px'><div style='width:36px;height:36px;background:#1e1e2e;border-radius:10px;margin:0 auto;line-height:36px'>💬</div><div style='color:#6b7280;font-size:12px;margin-top:12px'>No history yet</div></div>""", unsafe_allow_html=True)
@@ -184,12 +158,12 @@ with col_main:
 
     c1,c2 = st.columns(2)
     with c1:
-        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v9")
+        lang_choice = st.selectbox("LANGUAGE", ["🇺🇸 English","🇪🇸 Español","🇧🇩 বাংলা"], index=0, key="lang_v10")
         if "English" in lang_choice: st.session_state.selected_lang = "English"
         elif "Español" in lang_choice: st.session_state.selected_lang = "Español"
         else: st.session_state.selected_lang = "বাংলা"
     with c2:
-        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE"," Harvard"], index=0, key="style_v9")
+        style_choice = st.selectbox("CITATION STYLE", ["APA 7","MLA 9","Chicago","IEEE"," Harvard"], index=0, key="style_v10")
         st.session_state.selected_style = style_choice
 
     for m in st.session_state.chat:
@@ -207,7 +181,7 @@ with col_main:
 
 I'm your Secure Citation Generator, protected by Free AI Firewall and OWASP LLM Top 10 Guardrails.
 
-I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE, and Harvard — in English, Español, or বাংলা.
+I can generate accurate citations in APA 7, MLA 9, Chicago, IEEE and Harvard — in English, Español or বাংলা.
 
 How can I help you cite today? Just paste your paper title, DOI, or URL.
 """
