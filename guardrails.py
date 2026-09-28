@@ -5,9 +5,10 @@ class Firewall:
         self.blocked_count = 127
         self.last_threat = None
         self.status = {
-            "Prompt Injection": "Active",
-            "System Prompt Leakage": "Active",
-            "Improper Output Handling": "Filtered ✓"
+  "Prompt Injection": "Active",
+  "System Prompt Leakage": "Active",
+  "Improper Output Handling": "Active"  # <-- Should be Active on start
+}
         }
 
     def scan(self, text: str):
