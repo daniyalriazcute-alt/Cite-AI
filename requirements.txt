@@ -1,7 +1,8 @@
 streamlit
-crewai==1.15.22
+crewai[litellm]==1.15.22
 crewai-tools==1.15.22
 groq
 langchain-groq
 python-dotenv
 requests
+litellm
